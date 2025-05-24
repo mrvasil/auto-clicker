@@ -136,69 +136,42 @@
         const rightButton = document.getElementById('rightButton');
         const statusMsg = document.getElementById('statusMsg');
         
-        let lastPressTime = 0;
-        const DEBOUNCE_TIME = 50;
-        let pressQueue = [];
-        let isProcessingQueue = false;
-
-        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-
-        function updateStatus(key) {
-            statusMsg.textContent = `Нажата клавиша: ${key}`;
-            setTimeout(() => statusMsg.textContent = '', 500);
-        }
-
-        async function processQueue() {
-            if (isProcessingQueue || pressQueue.length === 0) return;
-            
-            isProcessingQueue = true;
-            
-            while (pressQueue.length > 0) {
-                const direction = pressQueue.shift();
-                try {
-                    const response = await fetch(`/press_${direction}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        updateStatus(direction === 'left' ? '←' : '→');
-                    }
-                } catch (error) {
-                    statusMsg.textContent = `Ошибка: ${error.message}`;
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        leftButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/press_left', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    statusMsg.textContent = 'Нажата клавиша: ←';
+                    setTimeout(() => {
+                        statusMsg.textContent = '';
+                    }, 500);
                 }
+            } catch (error) {
+                statusMsg.textContent = 'Ошибка: ' + error.message;
             }
-            
-            isProcessingQueue = false;
-        }
-
-        function queuePress(direction) {
-            const now = Date.now();
-            if (now - lastPressTime >= DEBOUNCE_TIME) {
-                pressQueue.push(direction);
-                lastPressTime = now;
-                processQueue();
+        });
+        
+        rightButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/press_right', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    statusMsg.textContent = 'Нажата клавиша: →';
+                    setTimeout(() => {
+                        statusMsg.textContent = '';
+                    }, 500);
+                }
+            } catch (error) {
+                statusMsg.textContent = 'Ошибка: ' + error.message;
             }
-        }
-
-        leftButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            queuePress('left');
-        });
-
-        rightButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            queuePress('right');
-        });
-
-        leftButton.addEventListener('mousedown', () => queuePress('left'));
-        rightButton.addEventListener('mousedown', () => queuePress('right'));
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') queuePress('left');
-            if (e.key === 'ArrowRight') queuePress('right');
         });
     </script>
 </body>
